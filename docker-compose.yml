@@ -1,0 +1,58 @@
+
+services:
+  postgres:
+    image: postgres:17
+    container_name: retailpulse-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: retailpulse
+      POSTGRES_USER: retailpulse
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD in .env}
+
+    ports:
+      - "5433:5432"
+
+    volumes:
+      - retailpulse_db:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d:ro
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U retailpulse -d retailpulse"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+    networks:
+      - retailpulse-network
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: retailpulse-pgadmin
+    restart: unless-stopped
+
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:?Define PGADMIN_EMAIL in .env}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:?Define PGADMIN_PASSWORD in .env}
+
+    ports:
+      - "5050:80"
+
+    volumes:
+      - retailpulse_pgadmin:/var/lib/pgadmin
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    networks:
+      - retailpulse-network
+
+volumes:
+  retailpulse_db:
+  retailpulse_pgadmin:
+
+networks:
+  retailpulse-network:
+    driver: bridge

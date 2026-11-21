@@ -1,0 +1,8 @@
+pandas
+pyarrow
+sqlalchemy
+psycopg[binary]
+python-dotenv
+pytest
+streamlit>=1.57
+plotly

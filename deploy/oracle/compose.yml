@@ -1,0 +1,47 @@
+services:
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: retailpulse
+      POSTGRES_USER: retailpulse_admin
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in deploy/oracle/.env}
+      DASHBOARD_DB_PASSWORD: ${DASHBOARD_DB_PASSWORD:?Set DASHBOARD_DB_PASSWORD in deploy/oracle/.env}
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256
+    volumes:
+      - retailpulse_pgdata:/var/lib/postgresql/data
+      - ./create_reader.sh:/docker-entrypoint-initdb.d/01-create-reader.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 15s
+    networks:
+      - backend
+
+  dashboard:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: retailpulse
+      DB_USER: retailpulse_reader
+      DB_PASSWORD: ${DASHBOARD_DB_PASSWORD:?Set DASHBOARD_DB_PASSWORD in deploy/oracle/.env}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${DASHBOARD_PORT:-8501}:8501"
+    networks:
+      - backend
+
+volumes:
+  retailpulse_pgdata:
+
+networks:
+  backend:
+    driver: bridge

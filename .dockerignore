@@ -1,0 +1,17 @@
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+.venv/
+__pycache__/
+.pytest_cache/
+.git/
+backups/
+data/
+logs/
+reports/
+dist/
+tests/
+*.py[cod]
+*.parquet
+*.xlsx
